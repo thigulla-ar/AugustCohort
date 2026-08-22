@@ -1,0 +1,44 @@
+[
+  {
+    "id": "faq-001",
+    "title": "How do I reset my password?",
+    "content": "Select Forgot Password on the login page, enter your account email, and follow the reset link. The reset link expires after 30 minutes.",
+    "tags": ["password", "login", "reset"],
+    "source": "faq"
+  },
+  {
+    "id": "faq-002",
+    "title": "How do I update my billing address?",
+    "content": "Open Account Settings, select Billing, choose Edit billing details, update the billing address, and select Save changes. The new address applies to future invoices.",
+    "tags": ["billing", "address", "invoice", "account"],
+    "source": "faq"
+  },
+  {
+    "id": "faq-003",
+    "title": "How do I enable two-factor authentication?",
+    "content": "Open Security Settings, select Two-factor authentication, scan the QR code with an authenticator app, enter the six-digit code, and select Enable.",
+    "tags": ["2fa", "security", "authenticator"],
+    "source": "faq"
+  },
+  {
+    "id": "faq-004",
+    "title": "How can I export my data?",
+    "content": "Open Account Settings, select Privacy and Data, choose Export data, select the requested data, and submit the export request. A download link is sent by email when the export is ready.",
+    "tags": ["data", "export", "privacy"],
+    "source": "faq"
+  },
+  {
+    "id": "faq-005",
+    "title": "How do I cancel my subscription?",
+    "content": "Open Billing Settings, select Manage subscription, choose Cancel subscription, and confirm the cancellation. Your service remains active until the end of the current billing period.",
+    "tags": ["billing", "subscription", "cancel"],
+    "source": "faq"
+  },
+  {
+    "id": "faq-006",
+    "title": "What should I do if a page is not loading?",
+    "content": "Refresh the page, clear the browser cache, and confirm that the internet connection is working. If the page still does not load, try another supported browser and contact support with the page URL and any displayed error message.",
+    "tags": ["page", "loading", "browser", "cache", "error"],
+    "source": "faq"
+  }
+]

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Metrics Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    window.addEventListener("DOMContentLoaded", async function() {
+      let resp = await fetch("/api/metrics");
+      let m = await resp.json();
+      document.getElementById("kpi-total").textContent = m.total_tickets;
+      document.getElementById("kpi-resolved").textContent = m.by_status.resolved || 0;
+      document.getElementById("kpi-escalated").textContent = (m.by_status.escalated || 0) + (m.by_status.associate_active || 0);
+      document.getElementById("kpi-reply").textContent = m.avg_first_reply_seconds + "s";
+      // Bar chart
+      let chart = document.getElementById("tickets-bar");
+      chart.innerHTML = "";
+      let max = Math.max(...m.daily.map(d => d.count));
+      for (let d of m.daily.reverse()) {
+        let bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.height = (d.count / max * 80 + 10) + "px";
+        bar.title = d.day + ": " + d.count;
+        chart.appendChild(bar);
+      }
+      // Top articles
+      let top = document.getElementById("top-articles");
+      for (let a of m.top_articles) {
+        let li = document.createElement("li");
+        li.textContent = `${a.title} (${a.helpful_count} 👍)`;
+        top.appendChild(li);
+      }
+      // Top failing
+      let fail = document.getElementById("top-failing");
+      for (let f of m.top_failing_queries) {
+        let li = document.createElement("li");
+        li.textContent = `${f.summary} (${f.count})`;
+        fail.appendChild(li);
+      }
+    });
+  </script>
+</head>
+<body class="dark-bg">
+  <div class="floating-bg"></div>
+  <div class="metrics-container">
+    <h2>Metrics Dashboard</h2>
+    <div class="kpi-cards">
+      <div class="kpi-card">Total Tickets<br><span id="kpi-total"></span></div>
+      <div class="kpi-card">Resolved<br><span id="kpi-resolved"></span></div>
+      <div class="kpi-card">Escalated<br><span id="kpi-escalated"></span></div>
+      <div class="kpi-card">Avg First Reply<br><span id="kpi-reply"></span></div>
+    </div>
+    <div class="metrics-charts">
+      <div>
+        <h3>Tickets per Day</h3>
+        <div id="tickets-bar" class="bar-chart"></div>
+      </div>
+      <div>
+        <h3>Top Helpful Articles</h3>
+        <ul id="top-articles"></ul>
+      </div>
+      <div>
+        <h3>Top Failing Queries</h3>
+        <ul id="top-failing"></ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

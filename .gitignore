@@ -1,0 +1,22 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Runtime data
+support_chat.db
+support_chat.db-*
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

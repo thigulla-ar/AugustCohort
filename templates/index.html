@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Support Chat</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/chat.js"></script>
+</head>
+<body class="dark-bg">
+  <div class="floating-bg"></div>
+  <main class="chat-container">
+    <header class="chat-header">
+      <div class="chat-brand">
+        <div class="chat-brand-mark" aria-hidden="true">SC</div>
+        <div>
+          <p class="chat-kicker">Customer care</p>
+          <h1>Support Chat</h1>
+        </div>
+      </div>
+      <div class="chat-status"><span></span>Online</div>
+    </header>
+    <div id="chat-messages" class="chat-messages"></div>
+    <section id="chat-empty-state" class="chat-empty-state">
+      <div class="chat-welcome-icon" aria-hidden="true">?</div>
+      <h2>How can we help?</h2>
+      <p>Ask about your account, billing, security, or anything else you need.</p>
+      <div class="chat-topic-list" aria-hidden="true">
+        <span>Account</span><span>Billing</span><span>Security</span>
+      </div>
+    </section>
+    <div id="typing-indicator" class="typing-indicator" style="display:none;">
+      <span></span><span></span><span></span>
+    </div>
+    <form id="chat-form" class="chat-form">
+      <input id="chat-input" autocomplete="off" placeholder="Describe what you need help with..." aria-label="Support message" />
+      <button type="submit" aria-label="Send message">Send</button>
+    </form>
+    <p class="chat-footnote">Your conversation is saved securely to your ticket history.</p>
+  </main>
+</body>
+</html>

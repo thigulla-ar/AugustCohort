@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Knowledge Base</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    window.addEventListener("DOMContentLoaded", async function() {
+      let resp = await fetch("/api/articles");
+      let articles = await resp.json();
+      let list = document.getElementById("kb-list");
+      for (let a of articles) {
+        let div = document.createElement("div");
+        div.className = "kb-article";
+        let title = document.createElement("h3");
+        title.textContent = a.title || "Untitled article";
+        let tags = document.createElement("div");
+        tags.className = "kb-tags";
+        tags.textContent = a.tags || "";
+        let body = document.createElement("div");
+        body.className = "kb-body";
+        body.textContent = a.body || "";
+        let meta = document.createElement("div");
+        meta.className = "kb-meta";
+        meta.textContent = `Helpful: ${a.helpful_count || 0}`;
+        div.append(title, tags, body, meta);
+        list.appendChild(div);
+      }
+    });
+  </script>
+</head>
+<body class="dark-bg">
+  <div class="floating-bg"></div>
+  <div class="kb-container">
+    <h2>Knowledge Base</h2>
+    <div id="kb-list"></div>
+  </div>
+</body>
+</html>

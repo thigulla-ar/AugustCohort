@@ -1,0 +1,23 @@
+[
+  {
+    "id": "process-001",
+    "title": "What is the process for changing a billing address?",
+    "content": "Verify the customer's identity, open Billing Settings, compare the requested address with the account record, save the new billing address, and confirm that future invoices will use the updated address. Do not change the address if identity verification fails.",
+    "tags": ["process", "billing", "address", "identity verification"],
+    "source": "process"
+  },
+  {
+    "id": "process-002",
+    "title": "What is the process for a failed password reset?",
+    "content": "Confirm the customer email, check whether the reset link expired, issue a new reset link, and verify that the customer can sign in. Escalate if the email cannot be verified or the reset link fails twice.",
+    "tags": ["process", "password", "reset", "escalation"],
+    "source": "process"
+  },
+  {
+    "id": "process-003",
+    "title": "What is the process for a billing dispute?",
+    "content": "Verify the customer's identity, collect the invoice number and disputed amount, review the payment record, document the reason for the dispute, and escalate to Billing Operations when a refund or charge investigation is required.",
+    "tags": ["process", "billing", "dispute", "refund"],
+    "source": "process"
+  }
+]

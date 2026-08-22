@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ticket-001",
+    "title": "Billing address change is not reflected on an invoice",
+    "content": "If a billing address change is missing from an invoice, confirm the address was saved before the invoice was generated. Review the invoice date and account history. If the invoice is already issued, escalate to Billing Operations for correction.",
+    "tags": ["ticket", "billing", "address", "invoice"],
+    "source": "ticket"
+  },
+  {
+    "id": "ticket-002",
+    "title": "Customer cannot receive a password reset email",
+    "content": "Check the email address for spelling, ask the customer to check spam and corporate mail filters, and issue one new reset link. Escalate when the customer still cannot receive the message after the retry.",
+    "tags": ["ticket", "password", "email", "reset"],
+    "source": "ticket"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "manual-001",
+    "title": "Billing settings procedure",
+    "content": "Billing settings are available under Account Settings and Billing. Associates must verify identity before changing billing details. Record the requested change in the ticket and confirm the effective date with the customer.",
+    "tags": ["manual", "billing", "settings", "identity verification"],
+    "source": "manual"
+  },
+  {
+    "id": "manual-002",
+    "title": "Associate escalation procedure",
+    "content": "When the knowledge base does not provide a confident answer, review the retrieved sources, ask for missing information, document the customer request, and escalate to the specialty team when account, billing, or security action is required.",
+    "tags": ["manual", "associate", "escalation", "support"],
+    "source": "manual"
+  }
+]

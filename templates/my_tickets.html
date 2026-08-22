@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Tickets</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    window.addEventListener("DOMContentLoaded", async function() {
+      let resp = await fetch("/api/my/tickets");
+      let tickets = await resp.json();
+      let list = document.getElementById("tickets-list");
+      for (let t of tickets) {
+        let div = document.createElement("div");
+        div.className = "ticket-row";
+        let link = document.createElement("a");
+        link.href = `/?ticket=${encodeURIComponent(t.id)}`;
+        link.textContent = t.summary || `Ticket #${t.id}`;
+        let badge = document.createElement("span");
+        badge.className = `ticket-badge status-${t.status}`;
+        badge.textContent = t.status;
+        div.append(link, document.createTextNode(" "), badge);
+        if (t.assigned_to) {
+          let assignee = document.createElement("span");
+          assignee.className = "ticket-assignee";
+          assignee.textContent = `Assigned: ${t.assigned_to}`;
+          div.append(document.createTextNode(" "), assignee);
+        }
+        list.appendChild(div);
+      }
+    });
+  </script>
+</head>
+<body class="dark-bg">
+  <div class="floating-bg"></div>
+  <div class="tickets-container">
+    <h2>My Tickets</h2>
+    <div id="tickets-list"></div>
+  </div>
+</body>
+</html>

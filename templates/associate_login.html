@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Associate Login</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    window.addEventListener("DOMContentLoaded", function() {
+      const loginForm = document.getElementById("login-form");
+      const resetForm = document.getElementById("reset-form");
+      const resetLink = document.getElementById("reset-link");
+      const loginLink = document.getElementById("login-link");
+      const error = document.getElementById("login-error");
+
+      resetLink.onclick = function() {
+        loginForm.hidden = true;
+        resetForm.hidden = false;
+        error.textContent = "";
+      };
+
+      loginLink.onclick = function() {
+        resetForm.hidden = true;
+        loginForm.hidden = false;
+        error.textContent = "";
+      };
+
+      loginForm.onsubmit = async function(e) {
+        e.preventDefault();
+        const resp = await fetch("/api/associate/login", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value
+          })
+        });
+        if (resp.ok) {
+          window.location = "/associate";
+        } else {
+          error.textContent = "Invalid username or password";
+        }
+      };
+
+      resetForm.onsubmit = async function(e) {
+        e.preventDefault();
+        const resp = await fetch("/api/associate/reset", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            username: document.getElementById("reset-username").value,
+            reset_code: document.getElementById("reset-code").value,
+            new_password: document.getElementById("new-password").value
+          })
+        });
+        if (resp.ok) {
+          error.textContent = "Password reset. You can now log in.";
+          resetForm.hidden = true;
+          loginForm.hidden = false;
+        } else {
+          error.textContent = "Unable to reset password";
+        }
+      };
+    });
+  </script>
+</head>
+<body class="dark-bg">
+  <div class="floating-bg"></div>
+  <main class="login-container associate-login-card">
+    <div class="login-mark" aria-hidden="true">SC</div>
+    <p class="login-eyebrow">Support operations</p>
+    <h1>Welcome back</h1>
+    <p class="login-subtitle">Sign in to manage customer conversations and resolutions.</p>
+    <form id="login-form">
+      <label for="username">Username</label>
+      <input id="username" required autocomplete="username" placeholder="Enter your username" />
+      <label for="password">Password</label>
+      <input id="password" required type="password" autocomplete="current-password" placeholder="Enter your password" />
+      <button class="login-primary" type="submit">Sign in</button>
+      <button class="login-secondary" type="button" id="reset-link">Forgot password?</button>
+    </form>
+    <form id="reset-form" hidden>
+      <p class="login-form-note">Use the reset code provided by your administrator.</p>
+      <label for="reset-username">Username</label>
+      <input id="reset-username" required autocomplete="username" placeholder="Enter your username" />
+      <label for="reset-code">Reset code</label>
+      <input id="reset-code" required type="password" placeholder="Enter reset code" />
+      <label for="new-password">New password</label>
+      <input id="new-password" required minlength="8" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+      <button class="login-primary" type="submit">Set new password</button>
+      <button class="login-secondary" type="button" id="login-link">Back to sign in</button>
+    </form>
+    <div id="login-error" class="login-error"></div>
+    <p class="login-footer">Authorized associates only</p>
+  </main>
+</body>
+</html>

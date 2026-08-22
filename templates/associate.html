@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Associate Console</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/associate.js"></script>
+</head>
+<body class="dark-bg">
+  <div class="floating-bg"></div>
+  <div class="assoc-container">
+    <div class="assoc-header">
+      <span>Associate Console</span>
+      <a href="/associate/logout" class="logout-link">Logout</a>
+    </div>
+    <div class="assoc-main">
+      <div class="assoc-queue" id="assoc-queue"></div>
+      <div class="assoc-workspace" id="assoc-workspace">
+        <div class="assoc-transcript" id="assoc-transcript"></div>
+        <form id="assoc-reply-form" class="assoc-reply-form">
+          <input id="assoc-reply-input" autocomplete="off" placeholder="Type a reply..." />
+          <button type="submit">Send</button>
+        </form>
+        <form id="assoc-resolve-form" class="assoc-resolve-form">
+          <input id="resolve-title" placeholder="Resolution title" />
+          <textarea id="resolve-steps" placeholder="Resolution steps"></textarea>
+          <input id="resolve-tags" placeholder="Tags (comma-separated)" />
+          <label><input type="checkbox" id="resolve-publish" /> Add this resolution to the knowledge base</label>
+          <button type="submit">Document resolution</button>
+          <button type="button" id="assoc-close-ticket">Close as resolved</button>
+        </form>
+      </div>
+      <aside class="assoc-kb" id="assoc-kb">
+        <h3>Knowledge Base</h3>
+        <div id="assoc-kb-list">Loading articles...</div>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>
