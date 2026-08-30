@@ -156,8 +156,10 @@ class SentriService:
             if event.worker.value == "rogue":
                 alerts += len(event.payload.get("alerts") or [])
             if event.worker.value == "clerk":
-                tokens += int(event.payload.get("total_tokens") or 0)
-                cost += float(event.payload.get("estimated_cost_usd") or 0)
+                usage = event.payload.get("usage")
+                usage_payload = usage if isinstance(usage, dict) else event.payload
+                tokens += int(usage_payload.get("total_tokens") or 0)
+                cost += float(usage_payload.get("estimated_cost_usd") or 0)
                 if event.kind == "performance_outcome":
                     for item in (event.payload.get("latency") or {}).get("per_action", []):
                         value = item.get("latency_ms")

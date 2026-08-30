@@ -132,6 +132,9 @@ def test_gateway_records_provider_usage_without_persisting_output(tmp_path: Path
             work_queue["payload"]["upstream_tools"][0]["execution_attestation"]
             == "caller_reported"
         )
+        snapshot = client.portal.call(app.state.service.dashboard_snapshot)
+        assert snapshot["summary"]["tokens"] == 150
+        assert snapshot["summary"]["cost_usd"] == 0.00036
         permit_event = next(event for event in events if event["kind"] == "permit_consumed")
         assert permit_event["payload"]["tool"] == "openai.responses"
         assert permit_event["payload"]["operation"] == "create"

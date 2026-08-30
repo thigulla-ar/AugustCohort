@@ -126,7 +126,12 @@
       if (!records[event.worker] || seen.has(event.event_id)) return;
       seen.add(event.event_id); records[event.worker].push(event); count++;
       if (event.worker === "rogue") alerts += (event.payload.alerts || []).length;
-      if (event.worker === "clerk") { tokens += event.payload.total_tokens || 0; cost += event.payload.estimated_cost_usd || 0; }
+      if (event.worker === "clerk") {
+        const usage = event.payload.usage || event.payload;
+        const eventTokens = Number(usage.total_tokens || 0), eventCost = Number(usage.estimated_cost_usd || 0);
+        if (Number.isFinite(eventTokens)) tokens += eventTokens;
+        if (Number.isFinite(eventCost)) cost += eventCost;
+      }
       if (event.kind === "call_tree") executions.add(event.execution_id);
       if (event.kind === "execution_outcome") completed.add(event.execution_id);
       if (event.kind === "performance_outcome") {
