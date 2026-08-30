@@ -1,0 +1,1544 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sentri Control Room API",
+    "summary": "Governance preflight and telemetry for hosted AI agents",
+    "description": "Sentri governance preflight for ChatGPT GPT Actions and Gemini API tools. Call sentriInteract before any proposed action and proceed only when status is completed and result.authorized is true. Immediately before each downstream tool call, consume its signed permit with verifySentriPermit and execute only the exact verified action. Then call reportSentriOutcome with every observed action result and its permit. Authenticate with the configured Sentri bearer token. Never retry or bypass blocked actions.",
+    "version": "0.3.1"
+  },
+  "servers": [
+    {
+      "url": "https://YOUR_PUBLIC_SENTRI_HOST",
+      "description": "Replace with the HTTPS URL that reaches the local Sentri service"
+    }
+  ],
+  "paths": {
+    "/interact": {
+      "post": {
+        "summary": "Interact",
+        "operationId": "sentriInteract",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InteractRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InteractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SentriBearer": []
+          }
+        ],
+        "x-openai-isConsequential": true
+      }
+    },
+    "/approvals/{thread_id}": {
+      "post": {
+        "summary": "Approve",
+        "operationId": "reviewSentriExecution",
+        "security": [
+          {
+            "SentriBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Thread Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InteractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-openai-isConsequential": true
+      }
+    },
+    "/outcomes": {
+      "post": {
+        "summary": "Report Outcome",
+        "description": "Attach observed tool results to a previously authorized workflow DAG.",
+        "operationId": "reportSentriOutcome",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutcomeReport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutcomeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SentriBearer": []
+          }
+        ],
+        "x-openai-isConsequential": false
+      }
+    },
+    "/execute": {
+      "post": {
+        "summary": "Execute Gateway",
+        "description": "Execute authorized model calls so Sentri observes provider usage directly.",
+        "operationId": "executeSentriGateway",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayExecutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayExecutionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SentriBearer": []
+          }
+        ],
+        "x-openai-isConsequential": true
+      }
+    },
+    "/permits/verify": {
+      "post": {
+        "summary": "Verify Permit",
+        "operationId": "verifySentriPermit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermitVerificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermitVerificationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SentriBearer": []
+          }
+        ],
+        "x-openai-isConsequential": true
+      }
+    },
+    "/audit": {
+      "get": {
+        "summary": "Audit",
+        "operationId": "getSentriAudit",
+        "security": [
+          {
+            "SentriBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "execution_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by execution ID; omit to return the latest events.",
+              "title": "Execution Id"
+            },
+            "description": "Filter by execution ID; omit to return the latest events."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 5000,
+              "minimum": 1,
+              "default": 500,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "getSentriHealth",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Getsentrihealth"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SentriBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActionOutcome": {
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Action Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "output": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output",
+            "description": "Tool output used to calculate a hash; raw output is not persisted."
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Finished At"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          },
+          "diagnostics": {
+            "$ref": "#/components/schemas/ExecutionDiagnostics"
+          },
+          "permit": {
+            "type": "string",
+            "maxLength": 8192,
+            "minLength": 32,
+            "title": "Permit",
+            "description": "Signed Sentri permit returned for this exact action."
+          }
+        },
+        "type": "object",
+        "required": [
+          "action_id",
+          "status",
+          "permit"
+        ],
+        "title": "ActionOutcome"
+      },
+      "ApprovalRequest": {
+        "properties": {
+          "approved": {
+            "type": "boolean",
+            "title": "Approved"
+          },
+          "reviewer": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Reviewer"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "approved",
+          "reviewer",
+          "reason"
+        ],
+        "title": "ApprovalRequest"
+      },
+      "AuditResponse": {
+        "properties": {
+          "execution_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Id"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TelemetryEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "title": "AuditResponse"
+      },
+      "CostMetrics": {
+        "properties": {
+          "latency_ms": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "default": 0
+          },
+          "prompt_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Prompt Tokens",
+            "default": 0
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completion Tokens",
+            "default": 0
+          },
+          "total_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Tokens",
+            "default": 0
+          },
+          "estimated_cost_usd": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Estimated Cost Usd",
+            "default": 0
+          },
+          "pricing_source": {
+            "type": "string",
+            "title": "Pricing Source",
+            "default": "caller_supplied"
+          }
+        },
+        "type": "object",
+        "title": "CostMetrics"
+      },
+      "EvidenceReference": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Source Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "uri": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uri",
+            "description": "Source URI. Query strings and fragments are removed before storage."
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Hash"
+          },
+          "citation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Citation Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id"
+        ],
+        "title": "EvidenceReference",
+        "description": "Privacy-conscious provenance supplied by the executing host."
+      },
+      "ExecutionDiagnostics": {
+        "properties": {
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "tool_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Version"
+          },
+          "provider_request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Request Id"
+          },
+          "attempt": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Attempt",
+            "default": 1
+          },
+          "retry_count": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Retry Count",
+            "default": 0
+          },
+          "timeout_ms": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 86400000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout Ms"
+          },
+          "http_status": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 599.0,
+                "minimum": 100.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Http Status"
+          },
+          "cache_hit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cache Hit"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceReference"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Evidence"
+          },
+          "calculation_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Calculation Steps"
+          },
+          "state_transitions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "State Transitions"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CostMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ExecutionDiagnostics",
+        "description": "Bounded, caller-reported diagnostics; secrets and raw payloads do not belong here."
+      },
+      "GatewayActionResult": {
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "title": "Action Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "output": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/CostMetrics"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "provider_request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Request Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action_id",
+          "status"
+        ],
+        "title": "GatewayActionResult"
+      },
+      "GatewayAuthorization": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/PlannedAction"
+          },
+          "permit": {
+            "type": "string",
+            "maxLength": 8192,
+            "minLength": 32,
+            "title": "Permit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "permit"
+        ],
+        "title": "GatewayAuthorization"
+      },
+      "GatewayExecutionRequest": {
+        "properties": {
+          "execution_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Execution Id"
+          },
+          "thread_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Thread Id"
+          },
+          "authorizations": {
+            "items": {
+              "$ref": "#/components/schemas/GatewayAuthorization"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Authorizations"
+          },
+          "upstream_tools": {
+            "items": {
+              "$ref": "#/components/schemas/UpstreamToolReference"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Upstream Tools",
+            "description": "Optional caller-observed tools that produced context for this gateway call. Raw arguments and outputs are intentionally excluded."
+          }
+        },
+        "type": "object",
+        "required": [
+          "execution_id",
+          "thread_id",
+          "authorizations"
+        ],
+        "title": "GatewayExecutionRequest"
+      },
+      "GatewayExecutionResponse": {
+        "properties": {
+          "execution_id": {
+            "type": "string",
+            "title": "Execution Id"
+          },
+          "thread_id": {
+            "type": "string",
+            "title": "Thread Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "failed",
+              "cancelled",
+              "mixed"
+            ],
+            "title": "Status"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/GatewayActionResult"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "outcome_event_id": {
+            "type": "string",
+            "title": "Outcome Event Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "execution_id",
+          "thread_id",
+          "status",
+          "results",
+          "outcome_event_id",
+          "message"
+        ],
+        "title": "GatewayExecutionResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InteractRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Message",
+            "description": "User request from the host chat"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          },
+          "host": {
+            "type": "string",
+            "enum": [
+              "chatgpt",
+              "gemini",
+              "local"
+            ],
+            "title": "Host",
+            "default": "local"
+          },
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/PlannedAction"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Actions"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "InteractRequest"
+      },
+      "InteractResponse": {
+        "properties": {
+          "execution_id": {
+            "type": "string",
+            "title": "Execution Id"
+          },
+          "thread_id": {
+            "type": "string",
+            "title": "Thread Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "approval_required",
+              "blocked",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/RiskAlert"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "cost": {
+            "$ref": "#/components/schemas/CostMetrics"
+          },
+          "approval_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Url"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "execution_id",
+          "thread_id",
+          "status"
+        ],
+        "title": "InteractResponse"
+      },
+      "OutcomeReport": {
+        "properties": {
+          "execution_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Execution Id"
+          },
+          "thread_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Thread Id"
+          },
+          "outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/ActionOutcome"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Outcomes"
+          },
+          "final_response": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Response",
+            "description": "Host response used to calculate a hash; raw content is not persisted."
+          },
+          "reported_by": {
+            "type": "string",
+            "enum": [
+              "chatgpt",
+              "gemini",
+              "local",
+              "external",
+              "sentri_gateway"
+            ],
+            "title": "Reported By",
+            "default": "external"
+          },
+          "upstream_tools": {
+            "items": {
+              "$ref": "#/components/schemas/UpstreamToolReference"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Upstream Tools"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "execution_id",
+          "thread_id",
+          "outcomes"
+        ],
+        "title": "OutcomeReport"
+      },
+      "OutcomeResponse": {
+        "properties": {
+          "execution_id": {
+            "type": "string",
+            "title": "Execution Id"
+          },
+          "thread_id": {
+            "type": "string",
+            "title": "Thread Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "failed",
+              "cancelled",
+              "mixed"
+            ],
+            "title": "Status"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "completed_dag": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Completed Dag"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "execution_id",
+          "thread_id",
+          "status",
+          "event_id",
+          "completed_dag",
+          "message"
+        ],
+        "title": "OutcomeResponse"
+      },
+      "PermitVerificationRequest": {
+        "properties": {
+          "permit": {
+            "type": "string",
+            "maxLength": 8192,
+            "minLength": 32,
+            "title": "Permit"
+          },
+          "action": {
+            "$ref": "#/components/schemas/PlannedAction"
+          },
+          "consume": {
+            "type": "boolean",
+            "title": "Consume",
+            "description": "Consume the single-use permit before executing the action.",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "permit",
+          "action"
+        ],
+        "title": "PermitVerificationRequest"
+      },
+      "PermitVerificationResponse": {
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "title": "Valid"
+          },
+          "consumed": {
+            "type": "boolean",
+            "title": "Consumed"
+          },
+          "claims": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Claims"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid",
+          "consumed",
+          "claims",
+          "message"
+        ],
+        "title": "PermitVerificationResponse"
+      },
+      "PlannedAction": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "tool": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Tool",
+            "description": "Exact downstream tool or API name"
+          },
+          "operation": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Operation",
+            "description": "Operation the tool is expected to perform"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Arguments"
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Rationale",
+            "default": "Requested by the host conversation"
+          },
+          "mutates_state": {
+            "type": "boolean",
+            "title": "Mutates State",
+            "default": false
+          },
+          "data_classification": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 32,
+            "title": "Data Classification",
+            "description": "Data labels such as public, internal, sensitive, or pii"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool",
+          "operation"
+        ],
+        "title": "PlannedAction"
+      },
+      "RiskAlert": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "title": "Severity"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "action_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Id"
+          },
+          "hard_limit": {
+            "type": "boolean",
+            "title": "Hard Limit",
+            "default": false
+          },
+          "requires_human": {
+            "type": "boolean",
+            "title": "Requires Human",
+            "default": false
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "severity",
+          "message"
+        ],
+        "title": "RiskAlert"
+      },
+      "TelemetryEvent": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "execution_id": {
+            "type": "string",
+            "title": "Execution Id"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/WorkerName"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "sequence": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sequence"
+          },
+          "previous_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Hash"
+          },
+          "integrity_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Integrity Hash"
+          }
+        },
+        "type": "object",
+        "required": [
+          "execution_id",
+          "worker",
+          "kind"
+        ],
+        "title": "TelemetryEvent"
+      },
+      "UpstreamToolReference": {
+        "properties": {
+          "tool": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Tool"
+          },
+          "operation": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Operation"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "failed",
+              "cancelled",
+              "unknown"
+            ],
+            "title": "Status",
+            "default": "unknown"
+          },
+          "provider_request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Request Id"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tool",
+          "operation"
+        ],
+        "title": "UpstreamToolReference",
+        "description": "Caller-observed tool lineage without retaining raw arguments or output."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WorkerName": {
+        "type": "string",
+        "enum": [
+          "work_queue",
+          "change_log",
+          "rogue",
+          "builder",
+          "clerk"
+        ],
+        "title": "WorkerName"
+      }
+    },
+    "securitySchemes": {
+      "SentriBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

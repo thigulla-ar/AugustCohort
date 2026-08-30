@@ -1,0 +1,41 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+.sentri-signing.key
+
+# Sentri runtime telemetry and settings
+settings.json
+logs/
+*.jsonl
+*.db
+*.db-shm
+*.db-wal
+
+# Python environments, caches, coverage, and builds
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Local test and security-review artifacts
+.security-review-tmp-*/
+.sentri-test*/
+.sentri-gateway-tests*/
+.sentri-mcp-app-tests*/
+.sentri-publish*/
+pytest-cache-files-*/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

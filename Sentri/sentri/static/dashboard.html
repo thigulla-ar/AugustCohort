@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sentri Control Room</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #e9eef0; --muted: #8c9a9d; --panel: #12191b;
+      --line: #263235; --accent: #67e8b4; --danger: #ff6f67; --amber: #f1bb5b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #091012; color: var(--ink); font: 14px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: end; padding: 28px 32px 18px; border-bottom: 1px solid var(--line); }
+    h1 { margin: 0; font: 700 24px/1 system-ui, sans-serif; letter-spacing: -.03em; }
+    .signal { color: var(--accent); }
+    .status { color: var(--muted); font-size: 12px; }
+    main { padding: 20px 32px 36px; }
+    .summary { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .metric, .review, .settings { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+    .metric span { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+    .metric b { display: block; margin-top: 5px; font: 600 18px system-ui, sans-serif; }
+    .review { display: none; margin-bottom: 16px; border-color: var(--amber); }
+    .review.visible { display: block; }
+    .review-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    input, select, button { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: #0c1315; color: var(--ink); font: inherit; }
+    input { min-width: 220px; flex: 1; }
+    button { cursor: pointer; }
+    button.approve { border-color: var(--accent); color: var(--accent); }
+    button.reject { border-color: var(--danger); color: var(--danger); }
+    .settings { margin-bottom: 16px; }
+    .settings summary { cursor: pointer; font-weight: 700; }
+    .settings-form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 12px; }
+    .settings-form label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    .settings-form select { min-width: 160px; }
+    .settings-note { margin-top: 10px; }
+    nav { display: flex; overflow-x: auto; border-bottom: 1px solid var(--line); }
+    nav button { border: 0; border-radius: 0; background: transparent; color: var(--muted); padding: 12px 15px; }
+    nav button.active { color: var(--ink); box-shadow: inset 0 -2px var(--accent); }
+    .log { min-height: 360px; max-height: 64vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-top: 0; }
+    .entry { display: grid; grid-template-columns: 160px 150px 1fr; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    .entry time, .entry .kind { color: var(--muted); }
+    .entry pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; font: inherit; }
+    .empty { color: var(--muted); padding: 42px 14px; text-align: center; }
+    .rogue .kind { color: var(--danger); }
+    @media (max-width: 700px) { header, main { padding-left: 16px; padding-right: 16px; } .summary { grid-template-columns: 1fr 1fr; } .entry { grid-template-columns: 1fr; gap: 2px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1><span class="signal">●</span> Sentri Control Room</h1><div class="status">Local governance telemetry</div></div>
+    <div id="connection" class="status">connecting</div>
+  </header>
+  <main>
+    <section class="summary">
+      <div class="metric"><span>Events</span><b id="event-count">0</b></div>
+      <div class="metric"><span>Alerts</span><b id="alert-count">0</b></div>
+      <div class="metric"><span>Tokens</span><b id="token-count">0</b></div>
+      <div class="metric"><span>Cost USD</span><b id="cost-count">$0.0000</b></div>
+      <div class="metric"><span>Executions</span><b id="execution-count">0</b></div>
+      <div class="metric"><span>Completion</span><b id="completion-rate">0%</b></div>
+      <div class="metric"><span>Action p95</span><b id="latency-p95">n/a</b></div>
+    </section>
+    <details class="settings" open>
+      <summary>Storage and retention</summary>
+      <div class="settings-form">
+        <label>Storage type
+          <select id="storage-mode">
+            <option value="sqlite">SQLite (default)</option>
+            <option value="jsonl">JSONL</option>
+            <option value="ephemeral">Ephemeral (RAM)</option>
+          </select>
+        </label>
+        <label>Retention
+          <select id="retention-days">
+            <option value="7">7 days</option>
+            <option value="30">30 days</option>
+            <option value="90">90 days</option>
+            <option value="forever">Forever</option>
+          </select>
+        </label>
+        <button class="approve" id="save-settings" onclick="saveSettings()">Save settings</button>
+      </div>
+      <div id="settings-path" class="status settings-note"></div>
+      <div id="settings-result" class="status settings-note"></div>
+    </details>
+    <section id="review" class="review">
+      <strong>Execution review</strong><span id="thread-label"></span>
+      <div class="review-row">
+        <input id="reviewer" placeholder="Reviewer name" aria-label="Reviewer name">
+        <input id="reason" placeholder="Decision reason" aria-label="Decision reason">
+        <button class="approve" onclick="review(true)">Approve</button>
+        <button class="reject" onclick="review(false)">Reject</button>
+      </div>
+      <div id="review-result" class="status"></div>
+    </section>
+    <nav id="tabs"></nav>
+    <section id="log" class="log"><div class="empty">Waiting for telemetry…</div></section>
+  </main>
+  <script>
+    const workers = ["work_queue", "change_log", "rogue", "builder", "clerk"];
+    const labels = {work_queue:"Work Queue", change_log:"Change Log", rogue:"Rogue", builder:"Builder", clerk:"Clerk"};
+    const records = Object.fromEntries(workers.map(worker => [worker, []]));
+    let active = "work_queue", count = 0, alerts = 0, tokens = 0, cost = 0;
+    const executions = new Set(), completed = new Set(), actionLatencies = [];
+    const seen = new Set();
+    const tabs = document.getElementById("tabs");
+    workers.forEach(worker => {
+      const button = document.createElement("button"); button.textContent = labels[worker]; button.dataset.worker = worker;
+      button.onclick = () => { active = worker; renderTabs(); renderLog(); }; tabs.appendChild(button);
+    });
+    function renderTabs() { [...tabs.children].forEach(button => button.classList.toggle("active", button.dataset.worker === active)); }
+    function renderLog() {
+      const log = document.getElementById("log"), items = records[active]; log.innerHTML = "";
+      if (!items.length) { log.innerHTML = `<div class="empty">No ${labels[active]} events yet.</div>`; return; }
+      items.slice().reverse().forEach(event => {
+        const row = document.createElement("article"); row.className = `entry ${active}`;
+        const time = document.createElement("time"); time.textContent = new Date(event.timestamp).toLocaleString();
+        const kind = document.createElement("div"); kind.className = "kind"; kind.textContent = event.kind;
+        const payload = document.createElement("pre"); payload.textContent = JSON.stringify(event.payload, null, 2);
+        row.append(time, kind, payload); log.appendChild(row);
+      });
+    }
+    function ingest(event) {
+      if (!records[event.worker] || seen.has(event.event_id)) return;
+      seen.add(event.event_id); records[event.worker].push(event); count++;
+      if (event.worker === "rogue") alerts += (event.payload.alerts || []).length;
+      if (event.worker === "clerk") { tokens += event.payload.total_tokens || 0; cost += event.payload.estimated_cost_usd || 0; }
+      if (event.kind === "call_tree") executions.add(event.execution_id);
+      if (event.kind === "execution_outcome") completed.add(event.execution_id);
+      if (event.kind === "performance_outcome") {
+        ((event.payload.latency || {}).per_action || []).forEach(item => {
+          if (Number.isFinite(item.latency_ms)) actionLatencies.push(item.latency_ms);
+        });
+      }
+      document.getElementById("event-count").textContent = count; document.getElementById("alert-count").textContent = alerts;
+      document.getElementById("token-count").textContent = tokens.toLocaleString(); document.getElementById("cost-count").textContent = `$${cost.toFixed(4)}`;
+      document.getElementById("execution-count").textContent = executions.size;
+      document.getElementById("completion-rate").textContent = executions.size ? `${Math.round(completed.size / executions.size * 100)}%` : "0%";
+      if (actionLatencies.length) {
+        const ordered = actionLatencies.slice().sort((a,b) => a-b), index = Math.floor((ordered.length - 1) * .95);
+        document.getElementById("latency-p95").textContent = `${ordered[index].toFixed(1)} ms`;
+      }
+      if (event.worker === active) renderLog();
+    }
+    const source = new EventSource("/dashboard-stream");
+    source.addEventListener("ready", () => document.getElementById("connection").textContent = "● live");
+    source.addEventListener("telemetry", message => ingest(JSON.parse(message.data)));
+    source.onerror = () => document.getElementById("connection").textContent = "reconnecting";
+    fetch("/audit?limit=500")
+      .then(response => {
+        if (!response.ok) throw new Error(`audit request failed (${response.status})`);
+        return response.json();
+      })
+      .then(body => (body.events || []).forEach(ingest))
+      .catch(error => document.getElementById("connection").textContent = error.message);
+    const threadId = new URLSearchParams(location.search).get("thread_id");
+    if (threadId) { document.getElementById("review").classList.add("visible"); document.getElementById("thread-label").textContent = ` · ${threadId}`; }
+    async function review(approved) {
+      const reviewer = document.getElementById("reviewer").value.trim(), reason = document.getElementById("reason").value.trim();
+      const target = document.getElementById("review-result");
+      if (!reviewer || !reason) { target.textContent = "Reviewer and reason are required."; return; }
+      const response = await fetch(`/approvals/${encodeURIComponent(threadId)}`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({approved, reviewer, reason})});
+      const body = await response.json(); target.textContent = response.ok ? `Decision recorded: ${body.status}. ${body.message || ""}` : (body.detail || "Review failed.");
+    }
+    function displaySettings(body) {
+      document.getElementById("storage-mode").value = body.storage_mode;
+      document.getElementById("retention-days").value = body.retention_days === "Forever" ? "forever" : String(body.retention_days);
+      document.getElementById("settings-path").textContent = `Active location: ${body.active_path} · Configuration: ${body.data_dir}`;
+    }
+    async function loadSettings() {
+      const target = document.getElementById("settings-result");
+      try {
+        const response = await fetch("/settings/storage");
+        if (!response.ok) throw new Error(`settings request failed (${response.status})`);
+        displaySettings(await response.json());
+      } catch (error) { target.textContent = error.message; }
+    }
+    async function saveSettings() {
+      const button = document.getElementById("save-settings"), target = document.getElementById("settings-result");
+      const retention = document.getElementById("retention-days").value;
+      button.disabled = true; target.textContent = "Saving…";
+      try {
+        const response = await fetch("/settings/storage", {
+          method: "PUT", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({storage_mode: document.getElementById("storage-mode").value, retention_days: retention === "forever" ? null : Number(retention)})
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Could not save storage settings.");
+        displaySettings(body);
+        target.textContent = `${body.message} Purged items: ${body.purged_items}. Reload to show only the active backend's records.`;
+      } catch (error) { target.textContent = error.message; }
+      finally { button.disabled = false; }
+    }
+    loadSettings();
+    renderTabs(); renderLog();
+  </script>
+</body>
+</html>

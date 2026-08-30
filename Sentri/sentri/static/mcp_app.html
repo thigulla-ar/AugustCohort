@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sentri Control Room</title>
+  <style>
+    :root { color-scheme: dark; --bg:#091012; --panel:#12191b; --line:#263235; --ink:#e9eef0; --muted:#91a0a3; --green:#67e8b4; --red:#ff766f; --amber:#f1bb5b; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:16px; background:var(--bg); color:var(--ink); font:13px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace; }
+    header,.row,.form { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+    header { justify-content:space-between; margin-bottom:12px; }
+    h1 { margin:0; font:700 20px/1.1 system-ui,sans-serif; }
+    .live { color:var(--green); } .muted { color:var(--muted); }
+    .metrics { display:grid; grid-template-columns:repeat(7,minmax(85px,1fr)); gap:8px; margin-bottom:12px; }
+    .card,.settings,.review,.logs { background:var(--panel); border:1px solid var(--line); border-radius:9px; }
+    .card { padding:10px; } .card span { color:var(--muted); font-size:10px; text-transform:uppercase; } .card b { display:block; font:600 17px system-ui,sans-serif; }
+    .settings,.review { padding:12px; margin-bottom:12px; } .review { display:none; border-color:var(--amber); } .review.visible { display:block; }
+    label { display:grid; gap:4px; color:var(--muted); font-size:10px; text-transform:uppercase; }
+    input,select,button { border:1px solid var(--line); border-radius:6px; padding:7px 9px; background:#0c1315; color:var(--ink); font:inherit; }
+    input { min-width:150px; flex:1; } button { cursor:pointer; } button.primary { border-color:var(--green); color:var(--green); } button.danger { border-color:var(--red); color:var(--red); }
+    nav { display:flex; overflow:auto; border-bottom:1px solid var(--line); } nav button { border:0; border-radius:0; background:transparent; color:var(--muted); } nav button.active { color:var(--ink); box-shadow:inset 0 -2px var(--green); }
+    .log { max-height:390px; overflow:auto; } article { display:grid; grid-template-columns:145px 135px 1fr; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); } article time,.kind { color:var(--muted); } article.rogue .kind { color:var(--red); } pre { white-space:pre-wrap; overflow-wrap:anywhere; margin:0; font:inherit; } .empty { padding:32px; text-align:center; color:var(--muted); }
+    .message { margin-top:8px; color:var(--muted); }
+    @media(max-width:620px){ body{padding:10px}.metrics{grid-template-columns:1fr 1fr}article{grid-template-columns:1fr;gap:2px}.form>*{width:100%} }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1><span class="live">●</span> Sentri Control Room</h1><span class="muted">MCP App · in-chat governance</span></div>
+    <div class="row"><span id="status" class="muted">connecting</span><button onclick="refresh()">Refresh</button></div>
+  </header>
+  <section class="metrics">
+    <div class="card"><span>Events</span><b id="events">0</b></div><div class="card"><span>Alerts</span><b id="alerts">0</b></div>
+    <div class="card"><span>Tokens</span><b id="tokens">0</b></div><div class="card"><span>Cost USD</span><b id="cost">$0.0000</b></div>
+    <div class="card"><span>Executions</span><b id="executions">0</b></div><div class="card"><span>Completion</span><b id="completion">0%</b></div>
+    <div class="card"><span>Action p95</span><b id="p95">n/a</b></div>
+  </section>
+  <details class="settings">
+    <summary>Storage and retention</summary>
+    <div class="form" style="margin-top:10px">
+      <label>Storage<select id="mode"><option value="sqlite">SQLite</option><option value="jsonl">JSONL</option><option value="ephemeral">Ephemeral RAM</option></select></label>
+      <label>Retention<select id="retention"><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option><option value="forever">Forever</option></select></label>
+      <button class="primary" onclick="saveSettings()">Save settings</button>
+    </div>
+    <div id="storage-path" class="message"></div><div id="settings-message" class="message"></div>
+  </details>
+  <section id="review" class="review">
+    <strong>Human review required</strong>
+    <div class="form" style="margin-top:10px">
+      <input id="thread" placeholder="Thread ID"><input id="reviewer" placeholder="Reviewer"><input id="reason" placeholder="Decision reason">
+      <button class="primary" onclick="review(true)">Approve</button><button class="danger" onclick="review(false)">Reject</button>
+    </div>
+    <div id="review-message" class="message"></div>
+  </section>
+  <section class="logs"><nav id="tabs"></nav><div id="log" class="log"></div></section>
+  <script>
+    const workers=["work_queue","change_log","rogue","builder","clerk"];
+    const labels={work_queue:"Work Queue",change_log:"Change Log",rogue:"Rogue",builder:"Builder",clerk:"Clerk"};
+    let active="work_queue", snapshot=null, nextId=1; const pending=new Map();
+    const eventCount=document.getElementById("events"), alertCount=document.getElementById("alerts"), tokenCount=document.getElementById("tokens"), costCount=document.getElementById("cost");
+    const modeSelect=document.getElementById("mode"), retentionSelect=document.getElementById("retention"), threadInput=document.getElementById("thread"), reviewerInput=document.getElementById("reviewer"), reasonInput=document.getElementById("reason");
+    const tabs=document.getElementById("tabs");
+    workers.forEach(worker=>{const b=document.createElement("button");b.textContent=labels[worker];b.dataset.worker=worker;b.onclick=()=>{active=worker;renderTabs();renderLog()};tabs.appendChild(b)});
+    function request(method,params){const id=nextId++;window.parent.postMessage({jsonrpc:"2.0",id,method,params},"*");return new Promise((resolve,reject)=>pending.set(id,{resolve,reject}))}
+    function unwrap(value){if(value?.structuredContent)return value.structuredContent;if(value?.content){const text=value.content.find(x=>x.type==="text")?.text;try{return JSON.parse(text)}catch{}}return value}
+    window.addEventListener("message",event=>{
+      if(event.source!==window.parent)return;const msg=event.data;if(!msg||msg.jsonrpc!=="2.0")return;
+      if(msg.id!==undefined&&pending.has(msg.id)){const p=pending.get(msg.id);pending.delete(msg.id);msg.error?p.reject(msg.error):p.resolve(msg.result);return}
+      if(msg.method==="ui/notifications/tool-result")render(unwrap(msg.params));
+    },{passive:true});
+    async function callTool(name,args){if(window.openai?.callTool)return unwrap(await window.openai.callTool(name,args));return unwrap(await request("tools/call",{name,arguments:args}))}
+    function render(data){if(!data?.events)return;snapshot=data;const s=data.summary||{},a=s.adoption||{},p=s.performance||{};eventCount.textContent=s.events||0;alertCount.textContent=s.alerts||0;tokenCount.textContent=(s.tokens||0).toLocaleString();costCount.textContent=`$${Number(s.cost_usd||0).toFixed(4)}`;
+      document.getElementById("executions").textContent=a.executions||0;document.getElementById("completion").textContent=`${Math.round(Number(a.completion_rate||0)*100)}%`;document.getElementById("p95").textContent=p.p95_action_latency_ms==null?"n/a":`${Number(p.p95_action_latency_ms).toFixed(1)} ms`;
+      const cfg=data.storage||{};modeSelect.value=cfg.storage_mode||"sqlite";retentionSelect.value=cfg.retention_days==="Forever"?"forever":String(cfg.retention_days||30);document.getElementById("storage-path").textContent=`Active: ${cfg.active_path||"unknown"}`;
+      if(data.review_thread_id){threadInput.value=data.review_thread_id;document.getElementById("review").classList.add("visible")}
+      document.getElementById("status").textContent="● live";renderTabs();renderLog()}
+    function renderTabs(){[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.worker===active))}
+    function renderLog(){const root=document.getElementById("log"),items=(snapshot?.events||[]).filter(e=>e.worker===active).reverse();root.innerHTML="";if(!items.length){root.innerHTML=`<div class="empty">No ${labels[active]} events yet.</div>`;return}items.forEach(e=>{const row=document.createElement("article");row.className=e.worker;const time=document.createElement("time");time.textContent=new Date(e.timestamp).toLocaleString();const kind=document.createElement("div");kind.className="kind";kind.textContent=e.kind;const pre=document.createElement("pre");pre.textContent=JSON.stringify(e.payload,null,2);row.append(time,kind,pre);root.appendChild(row)})}
+    async function refresh(){document.getElementById("status").textContent="refreshing";try{render(await callTool("sentri_dashboard_data",{limit:500}))}catch(e){document.getElementById("status").textContent="refresh failed"}}
+    async function saveSettings(){const target=document.getElementById("settings-message");target.textContent="Saving…";try{const result=await callTool("sentri_configure_storage",{storage_mode:modeSelect.value,retention_days:retentionSelect.value==="forever"?null:Number(retentionSelect.value)});target.textContent=result.message||"Saved.";await refresh()}catch(e){target.textContent=e.message||"Could not save settings."}}
+    async function review(approved){const target=document.getElementById("review-message");if(!threadInput.value||!reviewerInput.value||!reasonInput.value){target.textContent="Thread, reviewer, and reason are required.";return}try{const result=await callTool("sentri_review",{thread_id:threadInput.value,approved,reviewer:reviewerInput.value,reason:reasonInput.value});target.textContent=`Decision recorded: ${result.status}. ${result.message||""}`;await refresh()}catch(e){target.textContent=e.message||"Review failed."}}
+    if(window.openai?.toolOutput)render(window.openai.toolOutput);renderTabs();renderLog();setInterval(()=>{if(document.visibilityState==="visible")refresh()},5000);
+  </script>
+</body>
+</html>
