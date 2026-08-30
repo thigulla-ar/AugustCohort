@@ -4,6 +4,17 @@ Sentri is a local-first governance control room for agent actions initiated from
 
 > Sentri never executes arbitrary downstream tools. It signs short-lived permits bound to the complete canonical action. External tools use `/permits/verify` and `/outcomes`; optional allowlisted OpenAI/Gemini text generation can run through Sentri's controlled `/execute` gateway so usage is observed directly.
 
+## Documentation
+
+- [Documentation home](docs/README.md)
+- [Getting started](docs/getting-started.md)
+- [Architecture](docs/architecture.md)
+- [Host integrations](docs/integrations.md)
+- [API reference](docs/api-reference.md)
+- [Operations](docs/operations.md)
+- [Incident investigation](docs/incident-investigation.md)
+- [Security policy](SECURITY.md)
+
 ## Architecture
 
 ```mermaid
